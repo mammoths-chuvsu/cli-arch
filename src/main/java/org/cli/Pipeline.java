@@ -1,5 +1,6 @@
 package org.cli;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -48,6 +49,8 @@ public class Pipeline {
                 }
                 pb.command(command.getName());
                 pb.command().addAll(command.getArgs());
+
+                pb.directory(new File(System.getProperty("user.dir")));
 
                 // Redirect stdin (except first command)
                 if (prevProcess != null) {
