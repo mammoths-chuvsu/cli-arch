@@ -3,6 +3,7 @@ package org.cli;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -36,6 +37,7 @@ public class Executor {
         ProcessBuilder pb = new ProcessBuilder(command.getName());
         pb.command().addAll(command.getArgs());
         pb.redirectErrorStream(true);
+        pb.directory(new File(System.getProperty("user.dir")));
 
         try {
             Process process = pb.start();
@@ -122,7 +124,11 @@ public class Executor {
             return command.getStdin();
         }
         String file = command.getArgs().getFirst();
-        return new FileInputStream(file);
+        Path path = Paths.get(file);
+        if (!path.isAbsolute()) {
+            file = Paths.get(System.getProperty("user.dir"), file).toString();
+        }
+        return new FileInputStream(new File(file));
     }
 
 
@@ -201,6 +207,10 @@ public class Executor {
                 input = command.getStdin();
             } else {
                 String fileName = grepArgs.getFileNames().getFirst();
+                Path path = Paths.get(fileName);
+                if (!path.isAbsolute()) {
+                    fileName = Paths.get(System.getProperty("user.dir"), fileName).toString();
+                }
                 input = new FileInputStream(fileName);
             }
 
