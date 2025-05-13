@@ -44,7 +44,7 @@ class ExecutorTest {
     }
 
     @Test
-        // Test for cat command
+    // Test for cat command
     void testExecuteCat() {
         Command command = new Command(List.of("cat", tempFileSimple.toString()));
         command.setStdout(output);
@@ -56,7 +56,7 @@ class ExecutorTest {
     }
 
     @Test
-        // Test for echo command
+    // Test for echo command
     void testExecuteEcho() {
         String echoArg = "Hello from echo!!!\n";
         Command command = new Command(List.of("echo", echoArg));
@@ -69,7 +69,7 @@ class ExecutorTest {
     }
 
     @Test
-        // Test for pwd command
+    // Test for pwd command
     void testExecutePwd() {
         Command command = new Command(List.of("pwd"));
         command.setStdout(output);
@@ -81,7 +81,7 @@ class ExecutorTest {
     }
 
     @Test
-        // Test for wc command
+    // Test for wc command
     void testExecuteWc() {
         Command command = new Command(List.of("wc", tempFileSimple.toString()));
         command.setStdout(output);
@@ -101,7 +101,7 @@ class ExecutorTest {
         int exitCode = Executor.execute(command);
 
         assertEquals(0, exitCode);
-        assertEquals("Hello from file\tagain!!!\n" , output.toString());
+        assertEquals("Hello from file\tagain!!!\n", output.toString());
     }
 
     @Test
@@ -116,7 +116,7 @@ class ExecutorTest {
                 This is a warning
                 Nothing important here
                 """;
-        assertEquals(expected , output.toString());
+        assertEquals(expected, output.toString());
     }
 
     @Test
@@ -132,7 +132,7 @@ class ExecutorTest {
                 Not whole worldERROR
                 Another ERROR found
                 """;
-        assertEquals(expected , output.toString());
+        assertEquals(expected, output.toString());
     }
 
     @Test
@@ -147,7 +147,7 @@ class ExecutorTest {
                 This is an ERROR message
                 Another ERROR found
                 """;
-        assertEquals(expected , output.toString());
+        assertEquals(expected, output.toString());
     }
 
     @Test
@@ -167,7 +167,7 @@ class ExecutorTest {
                 Log: all systems normal
                 ------
                 """;
-        assertEquals(expected , output.toString());
+        assertEquals(expected, output.toString());
     }
 
     @Test
@@ -186,7 +186,7 @@ class ExecutorTest {
                 Another ERROR found
                 Log: all systems normal
                 """;
-        assertEquals(expected , output.toString());
+        assertEquals(expected, output.toString());
     }
 
     @Test
@@ -197,13 +197,38 @@ class ExecutorTest {
         int exitCode = Executor.execute(command);
 
         assertEquals(0, exitCode);
-        assertEquals("" , output.toString());
+        assertEquals("", output.toString());
     }
 
     @Test
-        // Test for external command
+    void testExecuteCd() {
+        String initialDir = System.getProperty("user.dir");
+        Command command = new Command(List.of("cd", ".."));
+        int exitCode = Executor.execute(command);
+
+        assertEquals(0, exitCode);
+        assertEquals(new File(initialDir).getParent(), System.getProperty("user.dir"));
+    }
+
+    @Test
+    void testExecuteLs() {
+        Command cdCommand = new Command(List.of("cd", "src"));
+        int cdExitCode = Executor.execute(cdCommand);
+        assertEquals(0, cdExitCode);
+
+        Command lsCommand = new Command(List.of("ls"));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        lsCommand.setStdout(output);
+
+        int lsExitCode = Executor.execute(lsCommand);
+
+        assertEquals(0, lsExitCode);
+        assertTrue(output.toString().contains("main"));
+    }
+
+    @Test
     void testExecuteExternal() {
-        Command command = new Command(List.of("ls", "src/main/java/org/cli/"));
+        Command command = new Command(List.of("ping", "-c", "1", "localhost"));
         command.setStdout(output);
 
         int exitCode = Executor.execute(command);
@@ -211,13 +236,9 @@ class ExecutorTest {
         assertEquals(0, exitCode);
 
         String outputString = output.toString().trim();
-        assertEquals("""
-                CLI.java
-                Command.java
-                Environment.java
-                Executor.java
-                Parser.java
-                Pipeline.java""", outputString);
-
+        assertTrue(outputString.contains("PING"),
+                "Output does not contain expected PING header");
+        assertTrue(outputString.contains("1 packets transmitted"),
+                "Output does not contain packet transmission info");
     }
 }
