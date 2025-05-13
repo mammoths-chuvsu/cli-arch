@@ -1,6 +1,8 @@
 package org.cli;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -255,6 +257,70 @@ public class Executor {
         return result;
     }
 
+    private static int executeCd(Command command) {
+        OutputStream output = command.getStdout();
+        List<String> args = command.getArgs();
+        String targetDir = args.isEmpty() ? System.getProperty("user.home") : args.get(0);
+        File newDir = new File(targetDir);
+
+        if (!newDir.isDirectory()) {
+            try {
+                output.write(("cd: " + targetDir + ": No such directory\n").getBytes());
+                output.flush();
+            } catch (IOException e) {
+                System.err.println("cd: " + e.getMessage());
+            }
+            return 1;
+        }
+
+        try {
+            // Normalize the path
+            String normalizedPath = newDir.getCanonicalPath();
+            System.setProperty("user.dir", normalizedPath);
+            output.write(("Changed directory to: " + normalizedPath + "\n").getBytes());
+            output.flush();
+        } catch (IOException e) {
+            System.err.println("cd: " + e.getMessage());
+            return 1;
+        }
+        return 0;
+    }
+
+    // Method to execute the `ls` command
+    private static int executeLs(Command command) {
+        OutputStream output = command.getStdout();
+        List<String> args = command.getArgs();
+        String targetDir = args.isEmpty() ? System.getProperty("user.dir") : args.get(0);
+        File dir = new File(targetDir);
+
+        if (!dir.isDirectory()) {
+            try {
+                output.write(("ls: " + targetDir + ": No such directory\n").getBytes());
+                output.flush();
+            } catch (IOException e) {
+                System.err.println("ls: " + e.getMessage());
+            }
+            return 1;
+        }
+
+        try {
+            Files.list(dir.toPath())
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .forEach(fileName -> {
+                    try {
+                        output.write((fileName + "\n").getBytes());
+                    } catch (IOException e) {
+                        System.err.println("ls: " + e.getMessage());
+                    }
+                });
+            output.flush();
+            return 0;
+        } catch (IOException e) {
+            System.err.println("ls: " + e.getMessage());
+            return 1;
+        }
+    }
 
     // Process unknown builtin command
     private static int unknownBuiltinCommand(Command command) {
@@ -264,11 +330,13 @@ public class Executor {
 
     // Map of methods for builtin commands
     private static final Map<String, Function<Command, Integer>> BUILTIN_FUNCTIONS = Map.of(
-            "cat", Executor::executeCat,
-            "echo", Executor::executeEcho,
-            "wc", Executor::executeWc,
-            "pwd", Executor::executePwd,
-            "grep", Executor::executeGrep
+        "cat", Executor::executeCat,
+        "echo", Executor::executeEcho,
+        "wc", Executor::executeWc,
+        "pwd", Executor::executePwd,
+        "grep", Executor::executeGrep,
+        "cd", Executor::executeCd,
+        "ls", Executor::executeLs
     );
 }
 
